@@ -26,7 +26,7 @@ public class CreateEMRCluster {
     AWSCredentials credentials;
 
     @Deprecated
-    public CreateEMRCluster(){
+    private CreateEMRCluster(){ 
 //        TEMP_ACCESS_KEY_ID = PropEditor
 //                .getProp(PublicStr.TEMP_ACCESS_KEY_ID);
 //        TEMP_SECRET_ACCESS_KEY = PropEditor
@@ -54,25 +54,30 @@ public class CreateEMRCluster {
     }
 
     public void createClusterWithStep(String inputPath, String outputPath, String logBucket) {
+    	
+    	//if there is no Cluster exists, create
+    	if(emr.listClusters().getClusters().isEmpty()){
+    		
+            String logUri = "s3://"+logBucket+"/";
 
-        String logUri = "s3://"+logBucket+"/";
+            RunJobFlowRequest request = new RunJobFlowRequest()
+                    .withName("Create cluster with ReleaseLabel")
+                    .withReleaseLabel("emr-4.2.0")
+                            // .withSteps(customStep)
+                    .withServiceRole("EMR_DefaultRole")
+                    .withJobFlowRole("EMR_EC2_DefaultRole")
+                    .withInstances(
+                            new JobFlowInstancesConfig().withInstanceCount(3)
+                                    .withKeepJobFlowAliveWhenNoSteps(true)
+                                    .withMasterInstanceType("m3.xlarge")
+                                    .withSlaveInstanceType("m3.xlarge"))
+                    .withVisibleToAllUsers(true).withLogUri(logUri)
+                    .withLogUri(logUri);
 
-
-        RunJobFlowRequest request = new RunJobFlowRequest()
-                .withName("Create cluster with ReleaseLabel")
-                .withReleaseLabel("emr-4.2.0")
-                        // .withSteps(customStep)
-                .withServiceRole("EMR_DefaultRole")
-                .withJobFlowRole("EMR_EC2_DefaultRole")
-                .withInstances(
-                        new JobFlowInstancesConfig().withInstanceCount(3)
-                                .withKeepJobFlowAliveWhenNoSteps(true)
-                                .withMasterInstanceType("m3.xlarge")
-                                .withSlaveInstanceType("m3.xlarge"))
-                .withVisibleToAllUsers(true).withLogUri(logUri)
-                .withLogUri(logUri);
-
-        RunJobFlowResult result = emr.runJobFlow(request);
+            RunJobFlowResult result = emr.runJobFlow(request);
+            
+    	}
+    	
 
         // --------------------------------------------------------------------------
 
